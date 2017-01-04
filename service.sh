@@ -65,19 +65,18 @@ buildRespBody() {
 #   $2 - body         (String)
 respond() {
   echo "HTTP/1.1 200 OK"
-  echo "Content-Type: $1; charset=utf-8"
   if [[ "$1" == 'application/json' ]]; then
     echo "Connection: keep-alive"
     echo "Transfer-Encoding: identity"
   else
     echo "Connection: close"
-    echo 'Link: </favicon.ico>; rel="icon"'
   fi
-  echo "Host: beero.cl"
+  echo "Content-Type: $1; charset=utf-8"
   echo "Content-Length: ${#2}"
-  echo "Date: $(date)"
-  echo ""
-  echo -e "$2"
+  echo 'Link: </favicon.ico>; rel="icon"'
+  echo "Host: beero.cl"
+  echo "Date: $(TZ=UTC; date '+%a, %d %b %Y %T GMT')"
+  echo -e "\n$2"
 }
 
 # permRedirect
@@ -97,7 +96,7 @@ fi
 
 # parse it all
 altResp=false
-if [[ "$path" == '/ock.html' || "$query" == 'type=html' ]]; then #html
+if [[ "$path" == '/ock.html' || "$query" == 'type=html' ]]; then # html
   type='html'
   contentType='text/html'
 elif [[ "$path" == '/ock.json' || "$query" == 'type=json' ]]; then # json
@@ -108,18 +107,24 @@ elif [[ "$path" == '/ock' && "$query" == '' || "$query" == 'type=plain' ]]; then
   contentType='text/plain'
 elif [[ "$path" == '/favicon' || "$path" == '/favicon.ico' ]]; then # beer emoji
   altResp=true
-  respond "image/x-icon" "$(cat ~/beeroclock/favicon.ico)"
+  echo 'HTTP/1.1 200 OK'
+  echo -e "Content-Type: image/x-icon; charset=binary\n"
+  cat '/root/beeroclock/favicon.ico'
+  exit 0
 elif [[ "${#query}" -gt 9 ]]; then # Unsupported Content-Type
   altResp=true
   echo 'HTTP/1.1 415 Unsupported Media Type'
-  echo ''
-  echo '415 Unsupported Media Type'
-else
+  echo -e "\n415 Unsupported Media Type"
+  exit 0
+else # unknown route
   altResp=true
   permRedirect
+  exit 0
 fi
 
+# if no alternative response, respond
 if [[ "$altResp" == false ]]; then
   body="$(buildRespBody $type)"
   respond "$contentType" "$body"
+  exit 0
 fi
