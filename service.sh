@@ -96,42 +96,30 @@ if [[ "$path" == "$query" ]]; then
 fi
 
 # parse it all
-if [[ "$path" =~ \/ock ]]; then # path contains '/ock'
+altResp=false
+if [[ "$path" == '/ock.html' || "$query" == 'type=html' ]]; then #html
+  type='html'
+  contentType='text/html'
+elif [[ "$path" == '/ock.json' || "$query" == 'type=json' ]]; then # json
+  type='json'
+  contentType='application/json'
+elif [[ "$path" == '/ock' && "$query" == '' || "$query" == 'type=plain' ]]; then
   type='plain'
   contentType='text/plain'
-  error=false
-
-  if [[ "$path" =~ \/ock(\.)(.*) ]] || # .(html|json)
-     [[ "$query" =~ (type\=)(html.*|json.*)? ]]; then # ?type=(html|json)
-    type="${BASH_REMATCH[2]}"
-
-    if [[ "$type" == 'json' ]]; then
-      contentType='application/json'
-    elif [[ "$type" =~ plain|html ]]; then
-      contentType="text/$type"
-    else # Unsupported content-type
-      if [[ "$query" == '' ]]; then
-        echo 'HTTP1.1 404 Not Found'
-        echo ''
-        echo '404 Not Found'
-      else
-        echo 'HTTP/1.1 415 Unsupported Media Type'
-        echo ''
-        echo '415 Unsupported Media Type'
-      fi
-      error=true
-    fi
-  elif [[ "${#path}" -ge 5 ]]; then
-    error=true
-    permRedirect
-  fi
-
-  if [[ "$error" == false ]]; then
-    body="$(buildRespBody $type)"
-    respond "$contentType" "$body"
-  fi
 elif [[ "$path" == '/favicon' || "$path" == '/favicon.ico' ]]; then # beer emoji
+  altResp=true
   respond "image/x-icon" "$(cat ~/beeroclock/favicon.ico)"
+elif [[ "${#query}" -gt 9 ]]; then # Unsupported Content-Type
+  altResp=true
+  echo 'HTTP/1.1 415 Unsupported Media Type'
+  echo ''
+  echo '415 Unsupported Media Type'
 else
+  altResp=true
   permRedirect
+fi
+
+if [[ "$altResp" == false ]]; then
+  body="$(buildRespBody $type)"
+  respond "$contentType" "$body"
 fi
