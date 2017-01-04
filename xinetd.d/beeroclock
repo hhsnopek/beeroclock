@@ -1,0 +1,15 @@
+service beeroclock
+{
+        cps = 100 30
+        disable = no
+        instances = 60
+        log_on_failure = HOST
+        log_on_success = HOST
+        log_type = FILE /var/log/beeroclock.log
+        port = 80
+        protocol = tcp
+        server = /root/beeroclock/service.sh
+        socket_type = stream
+        user = root
+        wait = no
+}
