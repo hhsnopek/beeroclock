@@ -15,7 +15,7 @@ which contains the path to the favicon.
 ## License
 [MIT] © [Henry Snopek]
 
-[Why?]: //medium.com/
+[Why?]: //medium.com/@hhsnopek/a-web-service-written-in-pure-bash-2af847902df1
 [xinetd-org/xinetd]: //github.com/xinetd-org/xinetd
 [xinetd.d/beeroclock]: xinetd.d/beeroclock
 [line 128]: //github.com/hhsnopek/beeroclock/blob/master/service.sh#L112
