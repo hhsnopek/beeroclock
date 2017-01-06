@@ -1,7 +1,7 @@
 #!/bin/bash
-read request
+read -r request
 while /bin/true; do
-  read header
+  read -r header
   [ "$header" == $'\r' ] && break
 done
 
@@ -17,8 +17,10 @@ beertime() {
         printf '%s' $(( $(date -u -d "$later" +%s) - $(date -u -d "$now" +%s) ))
       }
 
-      local now=$(date -d 'now' '+%F %T %Z')
-      local later=$(date -d "today $1:00:00" '+%F %T %Z')
+      local now=
+      now=$(date -d 'now' '+%F %T %Z')
+      local later=
+      later=$(date -d "today $1:00:00" '+%F %T %Z')
       local hrsUntil=$(( $(diffTime) / 60 / 60 ))
       now=$(date -d "$now +$hrsUntil hours" '+%F %T %Z')
       local minUntil=$(( $(diffTime) / 60 ))
@@ -27,11 +29,13 @@ beertime() {
     fi
   }
 
-  local hrs=$(date +"%H")
-  local day=$(date +"%w")
+  local hrs=
+  hrs=$(date +"%H")
+  local day=
+  day=$(date +"%w")
   case $day in
-    [1-4]*) beer_o_clock 17 $hrs;; # mon - thurs
-    5) beer_o_clock 16 $hrs;; # fri
+    [1-4]*) beer_o_clock 17 "${hrs}";; # mon - thurs
+    5) beer_o_clock 16 "${hrs}";; # fri
     *) beer_o_clock;; # sat/sun
   esac
 }
@@ -40,22 +44,23 @@ beertime() {
 # param: $1 content-type (String)
 buildRespBody() {
   # request timezone
-  local reqTZ="$(curl -sSL https://ipapi.co/$REMOTE_HOST/timezone)"
-  local time="$(TZ=$reqTZ beertime)"
+  local reqTZ="$(curl -sSL "https://ipapi.co/${REMOTE_HOST}/timezone")"
+  local time=
+  time="$(TZ=$reqTZ beertime)"
 
   if [[ "$1" == 'plain' ]]; then
-    echo "$time\r"
+    printf "%s\r" "${time}"
   elif [[ "$1" == 'json' ]]; then
     local beertime=true
     if [[ "$time" =~ 'T\-minus' ]]; then
       beertime=false
     fi
-    echo "{\"success\":true,\"status_code\":200,\"status_text\":\"OK\",\"content\":{\"beertime?\":$beertime,\"message\":\"$(echo $time | tr '\n' ' ')\"}}"
+    echo "{\"success\":true,\"status_code\":200,\"status_text\":\"OK\",\"content\":{\"beertime?\":$beertime,\"message\":\"$(echo "${time}" | tr '\n' ' ')\"}}"
   elif [[ "$1" == 'html' ]]; then
     time=$(echo "$time" | sed ':a;N;$!ba;s/\n/\<\/br\>/g')
     echo "<html><head><link rel='shortcut icon' type='image/x-icon' href='/favicon.ico'></head><body style='font-family: monospace; font-size: 32px;'><p>$time</p></body></html>"
   else
-    echo 'Internal Error: No Content-Type passed into buildRespBody.\nPlease file an issue here https://github.com/hhsnopek/beerokclock with the current URL.\nThank you!\r'
+    printf 'Internal Error: No Content-Type passed into buildRespBody.\nPlease file an issue here https://github.com/hhsnopek/beerokclock with the current URL.\nThank you!\r'
   fi
 }
 
